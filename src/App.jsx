@@ -2,12 +2,18 @@ import { useLoaderData, useSearchParams, useNavigate } from 'react-router-dom'
 import { useEffect, useRef, useState } from 'react'
 
 function AnimatedBlock({ children, id, show, skipAnimation }) {
-  const [visible, setVisible] = useState(skipAnimation && show)
-  const [height, setHeight] = useState(skipAnimation && show ? 'auto' : 0)
+  const initialSkip = useRef(skipAnimation && show)
+  const [visible, setVisible] = useState(initialSkip.current || false)
+  const [height, setHeight] = useState(initialSkip.current ? 'auto' : 0)
   const innerRef = useRef(null)
-  const prevId = useRef(skipAnimation ? id : null)
+  const prevId = useRef(initialSkip.current ? id : null)
 
   useEffect(() => {
+    // If we already showed on mount due to skipAnimation, don't re-run
+    if (initialSkip.current) {
+      initialSkip.current = false
+      return
+    }
     if (!show) {
       setVisible(false)
       setHeight(0)
@@ -26,17 +32,22 @@ function AnimatedBlock({ children, id, show, skipAnimation }) {
   }, [id, show])
 
   useEffect(() => {
-    if (show) {
+    if (show && !initialSkip.current) {
       setVisible(true)
       if (innerRef.current) setHeight(innerRef.current.scrollHeight)
     }
   }, [])
 
+  // If skipAnimation and show, render without animation wrapper
+  if (skipAnimation && show) {
+    return <div>{children}</div>
+  }
+
   return (
     <div
       style={{
         overflow: 'hidden',
-        transition: skipAnimation ? 'none' : 'height 0.45s cubic-bezier(0.4,0,0.2,1), opacity 0.45s ease, transform 0.45s cubic-bezier(0.4,0,0.2,1)',
+        transition: 'height 0.45s cubic-bezier(0.4,0,0.2,1), opacity 0.45s ease, transform 0.45s cubic-bezier(0.4,0,0.2,1)',
         height: visible ? height : 0,
         opacity: visible ? 1 : 0,
         transform: visible ? 'translateY(0px)' : 'translateY(24px)',
@@ -75,6 +86,22 @@ function AnimatedBreadcrumbItem({ label, active, index, show, skipAnimation }) {
       return () => clearTimeout(t)
     }
   }, [show, label, index, skipAnimation])
+
+  // If skipAnimation and show, render without animation
+  if (skipAnimation && show) {
+    return (
+      <li className="flex items-center gap-2">
+        {index > 0 && (
+          <svg width="12" height="12" fill="none" viewBox="0 0 24 24" className="text-gray-400 shrink-0">
+            <path d="M9 18l6-6-6-6" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
+          </svg>
+        )}
+        <span className={active ? 'font-bold text-blue-500' : 'font-bold text-gray-400'}>
+          {label}
+        </span>
+      </li>
+    )
+  }
 
   return (
     <li
