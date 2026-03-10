@@ -4,13 +4,16 @@ import { createBrowserRouter, RouterProvider } from 'react-router-dom'
 import App from './App.jsx'
 import { loader } from './loader.js'
 
-const router = createBrowserRouter([
-  {
-    path: '/',
-    element: <App />,
-    loader: loader,
-  },
-])
+const router = createBrowserRouter(
+  [
+    {
+      path: '/',
+      element: <App />,
+      loader: loader,
+    },
+  ],
+  { basename: '/frontend-assessment' }
+)
 
 createRoot(document.getElementById('root')).render(
   <StrictMode>
