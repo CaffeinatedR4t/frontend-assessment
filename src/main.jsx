@@ -12,7 +12,7 @@ const router = createBrowserRouter(
       loader: loader,
     },
   ],
-  { basename: '/frontend-assessment' }
+  { basename: import.meta.env.BASE_URL }
 )
 
 createRoot(document.getElementById('root')).render(

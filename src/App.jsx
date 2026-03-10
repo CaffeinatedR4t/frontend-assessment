@@ -1,25 +1,134 @@
 import { useLoaderData, useSearchParams, useNavigate } from 'react-router-dom'
+import { useEffect, useRef, useState } from 'react'
+
+function AnimatedBlock({ children, id, show, skipAnimation }) {
+  const [visible, setVisible] = useState(skipAnimation && show)
+  const [height, setHeight] = useState(skipAnimation && show ? 'auto' : 0)
+  const innerRef = useRef(null)
+  const prevId = useRef(skipAnimation ? id : null)
+
+  useEffect(() => {
+    if (!show) {
+      setVisible(false)
+      setHeight(0)
+      return
+    }
+    if (id !== prevId.current) {
+      setVisible(false)
+      setHeight(0)
+      const t = setTimeout(() => {
+        setVisible(true)
+        if (innerRef.current) setHeight(innerRef.current.scrollHeight)
+        prevId.current = id
+      }, 60)
+      return () => clearTimeout(t)
+    }
+  }, [id, show])
+
+  useEffect(() => {
+    if (show) {
+      setVisible(true)
+      if (innerRef.current) setHeight(innerRef.current.scrollHeight)
+    }
+  }, [])
+
+  return (
+    <div
+      style={{
+        overflow: 'hidden',
+        transition: skipAnimation ? 'none' : 'height 0.45s cubic-bezier(0.4,0,0.2,1), opacity 0.45s ease, transform 0.45s cubic-bezier(0.4,0,0.2,1)',
+        height: visible ? height : 0,
+        opacity: visible ? 1 : 0,
+        transform: visible ? 'translateY(0px)' : 'translateY(24px)',
+      }}
+    >
+      <div ref={innerRef}>
+        {children}
+      </div>
+    </div>
+  )
+}
+
+function AnimatedBreadcrumbItem({ label, active, index, show, skipAnimation }) {
+  const initialSkip = useRef(skipAnimation && show)
+  const [visible, setVisible] = useState(initialSkip.current)
+
+  useEffect(() => {
+    if (initialSkip.current) {
+      initialSkip.current = false
+      return
+    }
+    if (skipAnimation) {
+      setVisible(show)
+      return
+    }
+    if (!show) {
+      const t = setTimeout(() => {
+        setVisible(false)
+      }, index * 50)
+      return () => clearTimeout(t)
+    } else {
+      setVisible(false)
+      const t = setTimeout(() => {
+        setVisible(true)
+      }, index * 80)
+      return () => clearTimeout(t)
+    }
+  }, [show, label, index, skipAnimation])
+
+  return (
+    <li
+      className="flex items-center gap-2"
+      style={{
+        transition: 'opacity 0.4s ease, transform 0.4s cubic-bezier(0.4,0,0.2,1)',
+        opacity: visible ? 1 : 0,
+        transform: visible ? 'translateX(0px)' : 'translateX(-10px)',
+      }}
+    >
+      {index > 0 && (
+        <svg width="12" height="12" fill="none" viewBox="0 0 24 24" className="text-gray-400 shrink-0">
+          <path d="M9 18l6-6-6-6" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
+        </svg>
+      )}
+      <span className={active ? 'font-bold text-blue-500' : 'font-bold text-gray-400'}>
+        {label}
+      </span>
+    </li>
+  )
+}
 
 export default function App() {
   const { provinces, regencies, districts } = useLoaderData()
   const [searchParams] = useSearchParams()
   const navigate = useNavigate()
 
+  const [skipAnimation, setSkipAnimation] = useState(() => {
+    const currentUrl = window.location.search
+    const storedUrl = sessionStorage.getItem('lastUrl')
+    return storedUrl === currentUrl
+  })
+
+  useEffect(() => {
+    sessionStorage.setItem('lastUrl', window.location.search)
+    const timer = setTimeout(() => setSkipAnimation(false), 100)
+    return () => clearTimeout(timer)
+  }, [])
+
   const selectedProvinceId = searchParams.get('province')
     ? Number(searchParams.get('province'))
-    : ''
+    : null
   const selectedRegencyId = searchParams.get('regency')
     ? Number(searchParams.get('regency'))
-    : ''
+    : null
   const selectedDistrictId = searchParams.get('district')
     ? Number(searchParams.get('district'))
-    : ''
+    : null
 
-  const filteredRegencies = selectedProvinceId
+  const filteredRegencies = selectedProvinceId !== null
     ? regencies.filter((r) => r.province_id === selectedProvinceId)
     : []
 
-  const filteredDistricts = selectedRegencyId
+  const filteredDistricts = selectedRegencyId !== null
     ? districts.filter((d) => d.regency_id === selectedRegencyId)
     : []
 
@@ -68,8 +177,72 @@ export default function App() {
       : null,
   ].filter(Boolean)
 
+  const [displayedBreadcrumbs, setDisplayedBreadcrumbs] = useState(breadcrumbItems)
+  const [breadcrumbShow, setBreadcrumbShow] = useState(
+    breadcrumbItems.map(() => true)
+  )
+
+  const [displayedProvince, setDisplayedProvince] = useState(selectedProvince)
+  const [displayedRegency, setDisplayedRegency] = useState(selectedRegency)
+  const [displayedDistrict, setDisplayedDistrict] = useState(selectedDistrict)
+
+  const [showProvince, setShowProvince] = useState(!!selectedProvince)
+  const [showRegency, setShowRegency] = useState(!!selectedRegency)
+  const [showDistrict, setShowDistrict] = useState(!!selectedDistrict)
+
+  useEffect(() => {
+    if (selectedProvince) {
+      setDisplayedProvince(selectedProvince)
+      setShowProvince(true)
+    } else {
+      setShowProvince(false)
+      const t = setTimeout(() => setDisplayedProvince(null), 500)
+      return () => clearTimeout(t)
+    }
+  }, [selectedProvince?.id])
+
+  useEffect(() => {
+    if (selectedRegency) {
+      setDisplayedRegency(selectedRegency)
+      setShowRegency(true)
+    } else {
+      setShowRegency(false)
+      const t = setTimeout(() => setDisplayedRegency(null), 500)
+      return () => clearTimeout(t)
+    }
+  }, [selectedRegency?.id])
+
+  useEffect(() => {
+    if (selectedDistrict) {
+      setDisplayedDistrict(selectedDistrict)
+      setShowDistrict(true)
+    } else {
+      setShowDistrict(false)
+      const t = setTimeout(() => setDisplayedDistrict(null), 500)
+      return () => clearTimeout(t)
+    }
+  }, [selectedDistrict?.id])
+
+  useEffect(() => {
+    if (breadcrumbItems.length >= displayedBreadcrumbs.length) {
+      setDisplayedBreadcrumbs(breadcrumbItems)
+      setBreadcrumbShow(breadcrumbItems.map(() => true))
+    } else {
+      const newShow = displayedBreadcrumbs.map((_, i) =>
+        i < breadcrumbItems.length
+      )
+      setBreadcrumbShow(newShow)
+      const t = setTimeout(() => {
+        setDisplayedBreadcrumbs(breadcrumbItems)
+        setBreadcrumbShow(breadcrumbItems.map(() => true))
+      }, 500)
+      return () => clearTimeout(t)
+    }
+  }, [breadcrumbItems.length])
+
   return (
     <div className="flex min-h-screen bg-white font-sans">
+
       {/* Sidebar */}
       <aside className="w-72 min-h-screen border-r border-gray-200 bg-gray-50 flex flex-col px-6 py-8 shrink-0">
 
@@ -93,12 +266,10 @@ export default function App() {
             Filter Wilayah
           </p>
           <div className="mt-7" />
+
           {/* Province */}
           <div className="mb-8">
-            <label
-              htmlFor="province"
-              className="block text-xs font-semibold tracking-widest text-gray-500 uppercase mb-2"
-            >
+            <label htmlFor="province" className="block text-xs font-semibold tracking-widest text-gray-500 uppercase mb-2">
               Provinsi
             </label>
             <div className="relative">
@@ -111,15 +282,13 @@ export default function App() {
               <select
                 id="province"
                 name="province"
-                value={selectedProvinceId}
+                value={selectedProvinceId ?? ''}
                 onChange={handleProvinceChange}
                 className="w-full border border-gray-600 rounded-lg pl-9 pr-8 py-2.5 text-sm text-gray-800 bg-white appearance-none focus:outline-none focus:ring-2 focus:ring-blue-400 cursor-pointer"
               >
                 <option value="">Pilih Provinsi</option>
                 {provinces.map((p) => (
-                  <option key={p.id} value={p.id}>
-                    {p.name}
-                  </option>
+                  <option key={p.id} value={p.id}>{p.name}</option>
                 ))}
               </select>
               <span className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none">
@@ -132,10 +301,7 @@ export default function App() {
 
           {/* Regency */}
           <div className="mb-8">
-            <label
-              htmlFor="regency"
-              className="block text-xs font-semibold tracking-widest text-gray-500 uppercase mb-2"
-            >
+            <label htmlFor="regency" className="block text-xs font-semibold tracking-widest text-gray-500 uppercase mb-2">
               Kota/Kabupaten
             </label>
             <div className="relative">
@@ -151,16 +317,14 @@ export default function App() {
               <select
                 id="regency"
                 name="regency"
-                value={selectedRegencyId}
+                value={selectedRegencyId ?? ''}
                 onChange={handleRegencyChange}
-                disabled={!selectedProvinceId}
+                disabled={selectedProvinceId === null}
                 className="w-full border border-gray-600 rounded-lg pl-9 pr-8 py-2.5 text-sm text-gray-800 bg-white appearance-none focus:outline-none focus:ring-2 focus:ring-blue-400 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 <option value="">Pilih Kota/Kabupaten</option>
                 {filteredRegencies.map((r) => (
-                  <option key={r.id} value={r.id}>
-                    {r.name}
-                  </option>
+                  <option key={r.id} value={r.id}>{r.name}</option>
                 ))}
               </select>
               <span className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none">
@@ -173,10 +337,7 @@ export default function App() {
 
           {/* District */}
           <div className="mb-14">
-            <label
-              htmlFor="district"
-              className="block text-xs font-semibold tracking-widest text-gray-500 uppercase mb-2"
-            >
+            <label htmlFor="district" className="block text-xs font-semibold tracking-widest text-gray-500 uppercase mb-2">
               Kecamatan
             </label>
             <div className="relative">
@@ -189,16 +350,14 @@ export default function App() {
               <select
                 id="district"
                 name="district"
-                value={selectedDistrictId}
+                value={selectedDistrictId ?? ''}
                 onChange={handleDistrictChange}
-                disabled={!selectedRegencyId}
+                disabled={selectedRegencyId === null}
                 className="w-full border border-gray-600 rounded-lg pl-9 pr-8 py-2.5 text-sm text-gray-800 bg-white appearance-none focus:outline-none focus:ring-2 focus:ring-blue-400 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 <option value="">Pilih Kecamatan</option>
                 {filteredDistricts.map((d) => (
-                  <option key={d.id} value={d.id}>
-                    {d.name}
-                  </option>
+                  <option key={d.id} value={d.id}>{d.name}</option>
                 ))}
               </select>
               <span className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none">
@@ -228,73 +387,77 @@ export default function App() {
 
       {/* Main Content */}
       <div className="flex-1 flex flex-col min-h-screen bg-gray-50">
+
         {/* Breadcrumb */}
         <nav className="px-8 py-8 border-b border-gray-200 bg-white">
-          <ol className="breadcrumb flex items-center gap-3 text-xs">
-            {breadcrumbItems.map((item, index) => (
-              <li key={index} className="flex items-center gap-2">
-                {index > 0 && (
-                  <svg width="12" height="12" fill="none" viewBox="0 0 24 24" className="text-gray-400">
-                    <path d="M9 18l6-6-6-6" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
-                  </svg>
-                )}
-                <span
-                  className={
-                    item.active
-                      ? 'font-bold text-blue-500'
-                      : 'font-bold text-gray-400'
-                  }
-                >
-                  {item.label}
-                </span>
-              </li>
+          <ol className="breadcrumb flex items-center gap-2 text-xs flex-wrap">
+            {displayedBreadcrumbs.map((item, index) => (
+              <AnimatedBreadcrumbItem
+                key={item.label}
+                label={item.label}
+                active={item.active}
+                index={index}
+                show={breadcrumbShow[index] ?? false}
+                skipAnimation={skipAnimation}
+              />
             ))}
           </ol>
         </nav>
 
         {/* Main Region Display */}
-        <main className="flex-1 flex flex-col items-center justify-center gap-2 px-8 py-12">
-          {!selectedProvince && !selectedRegency && !selectedDistrict ? (
+        <main className="flex-1 flex flex-col items-center justify-center px-8 py-12">
+          {!displayedProvince && !displayedRegency && !displayedDistrict ? (
             <div className="text-center text-gray-400">
               <p className="text-lg">Pilih wilayah untuk memulai</p>
             </div>
           ) : (
-            <>
-              {selectedProvince && (
-                <div className="text-center mb-7">
-                  <p className="text-xs font-semibold tracking-widest text-blue-400 uppercase mb-2">
-                    Provinsi
-                  </p>
-                  <h1 className="text-6xl font-extrabold text-gray-900">{selectedProvince.name}</h1>
-                </div>
-              )}
+            <div className="flex flex-col items-center w-full">
 
-              {selectedProvince && selectedRegency && (
-                <div className="text-gray-300 text-2xl my-2 mb-7">↓</div>
-              )}
+              {/* Province */}
+              <AnimatedBlock id={`province-${displayedProvince?.id}`} show={showProvince} skipAnimation={skipAnimation}>
+                {displayedProvince && (
+                  <div className="text-center py-4">
+                    <p className="text-xs font-semibold tracking-widest text-blue-400 uppercase mb-2">Provinsi</p>
+                    <h1 className="text-6xl font-extrabold text-gray-900">{displayedProvince.name}</h1>
+                  </div>
+                )}
+              </AnimatedBlock>
 
-              {selectedRegency && (
-                <div className="text-center mb-7">
-                  <p className="text-xs font-semibold tracking-widest text-blue-400 uppercase mb-2">
-                    Kota / Kabupaten
-                  </p>
-                  <h2 className="text-5xl font-extrabold text-gray-900">{selectedRegency.name}</h2>
-                </div>
-              )}
+              {/* Arrow 1 */}
+              <AnimatedBlock id={`arrow1-${displayedRegency?.id}`} show={showRegency} skipAnimation={skipAnimation}>
+                {displayedRegency && (
+                  <div className="text-gray-300 text-2xl py-2">↓</div>
+                )}
+              </AnimatedBlock>
 
-              {selectedRegency && selectedDistrict && (
-                <div className="text-gray-300 text-2xl my-2 mb-7">↓</div>
-              )}
+              {/* Regency */}
+              <AnimatedBlock id={`regency-${displayedRegency?.id}`} show={showRegency} skipAnimation={skipAnimation}>
+                {displayedRegency && (
+                  <div className="text-center py-4">
+                    <p className="text-xs font-semibold tracking-widest text-blue-400 uppercase mb-2">Kota / Kabupaten</p>
+                    <h2 className="text-5xl font-extrabold text-gray-900">{displayedRegency.name}</h2>
+                  </div>
+                )}
+              </AnimatedBlock>
 
-              {selectedDistrict && (
-                <div className="text-center">
-                  <p className="text-xs font-semibold tracking-widest text-blue-400 uppercase mb-2">
-                    Kecamatan
-                  </p>
-                  <h3 className="text-4xl font-bold text-gray-900">{selectedDistrict.name}</h3>
-                </div>
-              )}
-            </>
+              {/* Arrow 2 */}
+              <AnimatedBlock id={`arrow2-${displayedDistrict?.id}`} show={showDistrict} skipAnimation={skipAnimation}>
+                {displayedDistrict && (
+                  <div className="text-gray-300 text-2xl py-2">↓</div>
+                )}
+              </AnimatedBlock>
+
+              {/* District */}
+              <AnimatedBlock id={`district-${displayedDistrict?.id}`} show={showDistrict} skipAnimation={skipAnimation}>
+                {displayedDistrict && (
+                  <div className="text-center py-4">
+                    <p className="text-xs font-semibold tracking-widest text-blue-400 uppercase mb-2">Kecamatan</p>
+                    <h3 className="text-4xl font-bold text-gray-900">{displayedDistrict.name}</h3>
+                  </div>
+                )}
+              </AnimatedBlock>
+
+            </div>
           )}
         </main>
       </div>
