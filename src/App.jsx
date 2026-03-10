@@ -77,7 +77,7 @@ export default function App() {
         <div className="flex items-center gap-3 mb-8">
           <div className="w-9 h-9 rounded-full bg-blue-100 flex items-center justify-center shrink-0">
             <img
-              src="/images/logo.png"
+              src="/frontend-assessment/images/logo.png"
               alt="Logo"
               className="logo-protected w-5 h-5 object-contain"
               onContextMenu={(e) => e.preventDefault()}
@@ -141,7 +141,7 @@ export default function App() {
             <div className="relative">
               <span className="absolute left-1 top-1/2 -translate-y-1/2 pointer-events-none">
                 <img
-                  src="/images/kota.png"
+                  src="/frontend-assessment/images/kota.png"
                   alt="kota"
                   className="w-7 h-7 object-contain opacity-100"
                   draggable={false}
@@ -215,7 +215,7 @@ export default function App() {
             className="w-full flex items-center justify-center gap-2 border-2 border-blue-600 text-gray-700 rounded-xl py-4 text-xs font-semibold hover:bg-blue-100 transition-colors bg-blue-50"
           >
             <img
-              src="/funnel.svg"
+              src="/frontend-assessment/funnel.svg"
               alt="reset"
               className="w-3.5 h-3.5 object-contain grayscale opacity-70"
               draggable={false}
