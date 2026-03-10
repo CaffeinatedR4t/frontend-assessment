@@ -262,7 +262,7 @@ export default function App() {
             <>
               {selectedProvince && (
                 <div className="text-center mb-7">
-                  <p className="text-xs font-semibold tracking-widest text-blue-300 uppercase mb-2">
+                  <p className="text-xs font-semibold tracking-widest text-blue-400 uppercase mb-2">
                     Provinsi
                   </p>
                   <h1 className="text-6xl font-extrabold text-gray-900">{selectedProvince.name}</h1>
@@ -275,7 +275,7 @@ export default function App() {
 
               {selectedRegency && (
                 <div className="text-center mb-7">
-                  <p className="text-xs font-semibold tracking-widest text-blue-300 uppercase mb-2">
+                  <p className="text-xs font-semibold tracking-widest text-blue-400 uppercase mb-2">
                     Kota / Kabupaten
                   </p>
                   <h2 className="text-5xl font-extrabold text-gray-900">{selectedRegency.name}</h2>
@@ -288,7 +288,7 @@ export default function App() {
 
               {selectedDistrict && (
                 <div className="text-center">
-                  <p className="text-xs font-semibold tracking-widest text-blue-300 uppercase mb-2">
+                  <p className="text-xs font-semibold tracking-widest text-blue-400 uppercase mb-2">
                     Kecamatan
                   </p>
                   <h3 className="text-4xl font-bold text-gray-900">{selectedDistrict.name}</h3>
