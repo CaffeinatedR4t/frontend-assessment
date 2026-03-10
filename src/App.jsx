@@ -435,7 +435,7 @@ export default function App() {
         <main className="flex-1 flex flex-col items-center justify-center px-8 py-12">
           {!displayedProvince && !displayedRegency && !displayedDistrict ? (
             <div className="text-center text-gray-400">
-              <p className="text-lg">Pilih wilayah untuk memulai</p>
+              <p className="text-lg">Pilih wilayah</p>
             </div>
           ) : (
             <div className="flex flex-col items-center w-full">
